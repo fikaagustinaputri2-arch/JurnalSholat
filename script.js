@@ -6,7 +6,6 @@ const sholatData = [
     { id: 'isya', name: 'Isya', time: '19:15' }
 ];
 
-// Menampilkan Tanggal Hari Ini
 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
 document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', options);
 
@@ -16,7 +15,6 @@ const progressText = document.getElementById('progress-text');
 const resetBtn = document.getElementById('reset-btn');
 const darkModeBtn = document.getElementById('dark-mode-btn');
 
-// --- FITUR DARK MODE ---
 const currentTheme = localStorage.getItem('theme') || 'light';
 if (currentTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
@@ -36,7 +34,6 @@ darkModeBtn.addEventListener('click', () => {
     }
 });
 
-// --- JURNAL SHOLAT & LOCALSTORAGE ---
 const getTodayKey = () => {
     const d = new Date();
     return jurnal_sholat_${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()};
