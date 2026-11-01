@@ -4,7 +4,128 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jurnal Sholat Harian</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --primary-color: #4f46e5;
+            --border-color: #e5e7eb;
+        }
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --card-bg: #1f2937;
+            --text-color: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary-color: #6366f1;
+            --border-color: #374151;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .btn-theme {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+        #current-date {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card h3, .card h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            background-color: var(--border-color);
+            border-radius: 999px;
+            height: 10px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        #progress-fill {
+            background-color: var(--primary-color);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        #progress-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .sholat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sholat-item:last-child {
+            border-bottom: none;
+        }
+        .sholat-info label {
+            font-weight: 600;
+            display: block;
+            cursor: pointer;
+        }
+        .sholat-info span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .sholat-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .btn-reset {
+            width: 100%;
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-reset:hover {
+            background-color: #b91c1c;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -26,14 +147,103 @@
 
         <div class="card">
             <h2>Daftar Wajib & Sunnah</h2>
-            <div id="sholat-list">
-                <!-- Daftar sholat akan dirender otomatis via JavaScript -->
-            </div>
+            <div id="sholat-list"></div>
         </div>
 
         <button id="reset-btn" class="btn-reset">Reset Data Hari Ini</button>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const sholatData = [
+            { id: 'subuh', name: 'Subuh', time: '04:30' },
+            { id: 'dzuhur', name: 'Dzuhur', time: '12:00' },
+            { id: 'ashar', name: 'Ashar', time: '15:15' },
+            { id: 'maghrib', name: 'Maghrib', time: '18:00' },
+            { id: 'isya', name: 'Isya', time: '19:15' }
+        ];
+
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', options);
+
+        const sholatListContainer = document.getElementById('sholat-list');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const resetBtn = document.getElementById('reset-btn');
+        const darkModeBtn = document.getElementById('dark-mode-btn');
+
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            darkModeBtn.innerText = '☀️';
+        }
+
+        darkModeBtn.addEventListener('click', () => {
+            let theme = document.documentElement.getAttribute('data-theme');
+            if (theme === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                darkModeBtn.innerText = '🌙';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                darkModeBtn.innerText = '☀️';
+            }
+        });
+
+        const getTodayKey = () => {
+            const d = new Date();
+            return jurnal_sholat_${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()};
+        };
+
+        const loadData = () => {
+            const saved = localStorage.getItem(getTodayKey());
+            return saved ? JSON.parse(saved) : {};
+        };
+
+        let dailyRecord = loadData();
+
+        const renderApp = () => {
+            sholatListContainer.innerHTML = '';
+            let completedCount = 0;
+
+            sholatData.forEach(item => {
+                const isChecked = dailyRecord[item.id] || false;
+                if (isChecked) completedCount++;
+
+                const div = document.createElement('div');
+                div.className = 'sholat-item';
+                div.innerHTML = `
+                    <div class="sholat-info">
+                        <label for="${item.id}">${item.name}</label>
+                        <span>Estimasi: ${item.time}</span>
+                    </div>
+                    <input type="checkbox" id="${item.id}" ${isChecked ? 'checked' : ''}>
+                `;
+
+                const checkbox = div.querySelector('input');
+                checkbox.addEventListener('change', (e) => {
+                    dailyRecord[item.id] = e.target.checked;
+                    localStorage.setItem(getTodayKey(), JSON.stringify(dailyRecord));
+                    renderApp();
+                });
+
+                sholatListContainer.appendChild(div);
+            });
+
+            const percentage = (completedCount / sholatData.length) * 100;
+            progressFill.style.width = ${percentage}%;
+            progressText.innerText = ${completedCount}/${sholatData.length} Sholat Selesai;
+        };
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Yakin ingin mereset catatan sholat hari ini?')) {
+                dailyRecord = {};
+                localStorage.removeItem(getTodayKey());
+                renderApp();
+            }
+        });
+
+        renderApp();
+    </script>
 </body>
 </html>
